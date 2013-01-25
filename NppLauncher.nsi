@@ -30,7 +30,7 @@
 !ifdef OUTFILE
   OutFile "${OUTFILE}"
 !else
-  OutFile ..\NppLauncher-${VERSION}-setup.exe
+  OutFile .\NppLauncher-${VERSION}-setup.exe
 !endif
 
 SetCompressor /SOLID lzma

@@ -47,7 +47,7 @@ int WINAPI WinMain (HINSTANCE hThisInstance,
    // récupération du chemin d'accès de Notepad++ dans le base de registre
    HKEY hKey;
    DWORD i;  
-   if( (i = RegOpenKeyExA( HKEY_LOCAL_MACHINE, "SOFTWARE\\NppLauncher", 0, KEY_READ | KEY_WOW64_64KEY, &hKey )) == ERROR_SUCCESS )
+   if( (i = RegOpenKeyExA( HKEY_LOCAL_MACHINE, "SOFTWARE\\NppLauncher", 0, KEY_READ , &hKey )) == ERROR_SUCCESS )
    {
       DWORD   iType;
       unsigned char sData[iCmdLen];
