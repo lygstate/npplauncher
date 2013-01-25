@@ -1,0 +1,23 @@
+NppLauncher                                                                   2013-01-24
+
+This tool is based on the sources from Stepho 2005
+Additions are done by mattesh(at)gmx.net to ensure function on all windows systems 
+including Windows 7. As well as adding the same to an installer program.
+
+It's a little Notepad++ launcher which allows you to replace notepad.exe completely 
+by Notepad++. (Without need for removing anything from the windows system.)
+
+Concept:
+      NppLauncher make use of a debugger feature in Windows the system will call a hooked 
+      process with appended parameters to allow debugging the intended application.
+      This hook application will be call whenever the correct application was resolved.
+      
+      notepad.exe receives always only one parameter which is now just deferred to Notepad++.
+      Because notepad.exe is a blocking executable, also NppLauncher behaves blocking by 
+      default. If you like to have it non-blocking just change the setting WaitForClose in 
+      the registry. The blocked process will show either the first Notepad++ window and wait
+      until Notepad++ closes or it will activate a dialog box and send the open command to 
+      Notepad++ asynchronously. In latter case the block will be the self standing dialog 
+      box, having the edit file name in the title.
+      
+Comments and contributions to mattesh(at)gmx.net 
