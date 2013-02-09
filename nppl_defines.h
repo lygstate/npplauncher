@@ -20,7 +20,7 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #define NPPL_DEFINES_H
 
 #include "versioninfo.inc"
-#define NPPL_VERSION TEXT("0.9.4")
+#define NPPL_VERSION TEXT("0.9")
 #define NPPL_VER_NAME TEXT("Version ")
 #define NPPL_APP_TITLE TEXT("NppLauncher")
 #define NPPL_SPACE TEXT(" ")

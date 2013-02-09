@@ -26,7 +26,6 @@
 #include <winreg.h>
 #include <stdio.h>
 #include <string.h>
-#include "versioninfo.inc"
 
 #ifndef _WIN32_IE
 #define _WIN32_IE 0x0501
