@@ -19,9 +19,10 @@
 ; Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 ;--------------------------------
 
+!include versionInfo.inc
 
-!ifndef VERSION
-  !define VERSION '0.9.4'
+!ifndef NPPL_MAIN_VERSION
+  !define NPPL_MAIN_VERSION '0.9.x'
 !endif
 !ifndef APPWEBSITE
   !define APPWEBSITE "http://sourceforge.net/projects/npplauncher/"
@@ -65,7 +66,7 @@ RequestExecutionLevel admin
 
 ;Names
 Name "NppLauncher"
-Caption "NppLauncher ${VERSION} Setup"
+Caption "NppLauncher ${NPPL_MAIN_VERSION} Setup"
 
 Var PluginsFolder 
 Var NotePadPath
@@ -83,8 +84,8 @@ Var NotePadPath
 !define MUI_COMPONENTSPAGE_SMALLDESC
 
 ;Pages
-!define MUI_WELCOMEPAGE_TITLE "Welcome to the NppLauncher ${VERSION} Setup Wizard"
-!define ILINE1 "This wizard will install NppLauncher ${VERSION}."
+!define MUI_WELCOMEPAGE_TITLE "Welcome to the NppLauncher ${NPPL_MAIN_VERSION} Setup Wizard"
+!define ILINE1 "This wizard will install NppLauncher ${NPPL_MAIN_VERSION}."
 !define ILINE2 "This program replaces the notepad.exe by a different editor like Notepad++."
 !define ILINE3 "It creates a blocking systemtray application and sends the open request to NotePad++."
 !define ILINE4 "When the file is getting closed in NotePad++ it releases the blocking call."
@@ -160,7 +161,7 @@ Section -post
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}" "DisplayName" "${APPNAME}"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}" "UninstallString" "$INSTDIR\uninstall.exe"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}" "DisplayIcon" "$INSTDIR\NppLauncher.exe"
-  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}" "DisplayVersion" "${VERSION}"
+  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}" "DisplayVersion" "${NPPL_MAIN_VERSION}"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}" "URLInfoAbout" "${APPWEBSITE}"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}" "PluginsFolder" $PluginsFolder
   

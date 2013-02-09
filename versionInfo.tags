@@ -1,38 +1,14 @@
-//----------------------------------------------------------------------------
-// Description: NppLauncher replaces the original wondows notepad 
-// additional effort was done to suspend the calling task as long as the notepad++ 
-// window with the edited text is open.
-// Author  : Mattes H. mattesh(at)gmx.net
-// Creation : 2013-01-13
-// The source is based on an idea from Stepho (superstepho.free.fr)
-// Création : 2005-08-22
-//
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-//----------------------------------------------------------------------------
-
 #ifndef VERSIONINFO_INC
 #define VERSIONINFO_INC
-//
-// this file is generated from versionInfo.tags
-//
-#define SVNREVINFO  TEXT("$WCREV$:$WCRANGE$$WCMODS?+: $")
+#define NPPL_MAIN_VERSION TEXT("0.9")
+#if 0 // NSIS section
+!define NPPL_MAIN_VERSION '0.9.$WCREV$$WCMODS?+:$'
+#endif
+#define SVNREVINFO  TEXT("$WCREV$$WCMODS?+:$")
 #define SVNREVISION TEXT("$WCREV$")
 #define SVNMODIFIED TEXT("$WCMODS?Unclean:Clean$")
 #define SVNDATE     TEXT("$WCDATE$")
 #define SVNREVRANGE TEXT("$WCRANGE$")
 #define SVNMIXED    TEXT("$WCMIXED?Mixed:Single$")
 #define SVNURL      TEXT("$WCURL$")
-
 #endif // VERSIONINFO_INC
