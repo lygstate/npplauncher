@@ -25,7 +25,6 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #include <string>
 #include <vector>
 #include "nppl_defines.h"
-//#define NPPL_VERSION TEXT("0.9.4")
 #define MNU_ABOUT 0
 
 const int nbFunc = 1;

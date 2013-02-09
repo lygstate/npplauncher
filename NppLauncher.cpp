@@ -26,6 +26,7 @@
 #include <winreg.h>
 #include <stdio.h>
 #include <string.h>
+#include "versioninfo.inc"
 
 #ifndef _WIN32_IE
 #define _WIN32_IE 0x0501
@@ -56,6 +57,7 @@ Please consider checking the registry at HKLM/Software/NppLauncher/.")
 CSystemTray _TrayIcon;
 HINSTANCE _hInst;
 DWORD bDebug=0;
+TCHAR arg[MAX_CMD_LEN] = TEXT("");
 
 // this function copies in string into out string by reducing eventually the length to 
 // an acceptable short. reducing the text in the middle.
@@ -93,7 +95,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
          if (pcds->dwData == NPPL_ID_FILE_CLOSED) {
             LPCWSTR lpszString = (LPCWSTR)(pcds->lpData);
             DBGW1("WndProc: got message NPPL_ID_FILE_CLOSED: %s", lpszString);  
-            if(0 == lstrcmp(_TrayIcon.GetTooltipText(), lpszString)) {
+            if(0 == lstrcmp(arg, lpszString)) {
                PostQuitMessage(0);
             } else {
                if(bDebug) { 
@@ -115,7 +117,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
       switch (wmId)
       {
       case IDM_ABOUT:
-         ::MessageBox(hWnd, NPPL_PRG_HELP, NPPL_HEADLINE, MB_OK);
+         ::MessageBox(hWnd, NPPL_PRG_HELP_TEXT, NPPL_HEADLINE, MB_OK);
          break;
       case IDM_EXIT:
          // cause call the close the program
@@ -363,7 +365,6 @@ int WINAPI WinMain (HINSTANCE hThisInstance,
    _hInst = hThisInstance; // Store instance handle in our global variable
 
    TCHAR cmd[MAX_CMD_LEN] = TEXT("\"C:\\Program Files\\Notepad++");
-   TCHAR arg[MAX_CMD_LEN] = TEXT("");
    DWORD bWaitForNotepadClose=1;
    //DWORD uWaitTime=0;
    MSG msg;

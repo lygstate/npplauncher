@@ -69,6 +69,10 @@
       <ImportLibrary>$(OutDir)NppLauncherPlugin.lib</ImportLibrary>
       <TargetMachine>MachineX86</TargetMachine>
     </Link>
+    <PreBuildEvent>
+      <Command>cmd.exe /c ..\version.cmd .. </Command>
+      <Message>Version info...</Message>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -93,6 +97,10 @@
       <ImportLibrary>$(OutDir)NppLauncherPlugin.lib</ImportLibrary>
       <TargetMachine>MachineX86</TargetMachine>
     </Link>
+    <PreBuildEvent>
+      <Command>cmd.exe /c ..\version.cmd .. </Command>
+      <Message>Version info...</Message>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="NppLauncherPlugin.cpp" />
