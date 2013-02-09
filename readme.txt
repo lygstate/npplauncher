@@ -1,4 +1,4 @@
-NppLauncher                                                                   2013-01-24
+NppLauncher                                                                   2013-02-09
 
 This tool is based on the sources from Stepho 2005
 Additions are done by mattesh(at)gmx.net to ensure function on all windows systems 
@@ -16,8 +16,6 @@ Concept:
       Because notepad.exe is a blocking executable, also NppLauncher behaves blocking by 
       default. If you like to have it non-blocking just change the setting WaitForClose in 
       the registry. The blocked process will show either the first Notepad++ window and wait
-      until Notepad++ closes or it will activate a dialog box and send the open command to 
-      Notepad++ asynchronously. In latter case the block will be the self standing dialog 
-      box, having the edit file name in the title.
+      until the file get closed or even Notepad++ closes. 
       
 Comments and contributions to mattesh(at)gmx.net 

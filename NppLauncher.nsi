@@ -21,16 +21,21 @@
 
 
 !ifndef VERSION
-  !define VERSION '0.9.3'
+  !define VERSION '0.9.4'
 !endif
-
+!ifndef APPWEBSITE
+  !define APPWEBSITE "http://sourceforge.net/projects/npplauncher/"
+!endif
+!ifndef APPNAME
+  !define APPNAME "NppLauncher"
+!endif
 ;--------------------------------
 ;Configuration
 
 !ifdef OUTFILE
   OutFile "${OUTFILE}"
 !else
-  OutFile .\NppLauncher-${VERSION}-setup.exe
+  OutFile .\NppLauncher-Setup.exe
 !endif
 
 SetCompressor /SOLID lzma
@@ -62,6 +67,9 @@ RequestExecutionLevel admin
 Name "NppLauncher"
 Caption "NppLauncher ${VERSION} Setup"
 
+Var PluginsFolder 
+Var NotePadPath
+
 ;Memento Settings
 !define MEMENTO_REGISTRY_ROOT HKLM
 !define MEMENTO_REGISTRY_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\NppLauncher"
@@ -77,21 +85,28 @@ Caption "NppLauncher ${VERSION} Setup"
 ;Pages
 !define MUI_WELCOMEPAGE_TITLE "Welcome to the NppLauncher ${VERSION} Setup Wizard"
 !define ILINE1 "This wizard will install NppLauncher ${VERSION}."
-!define ILINE2 "The program replaces notepad.exe by Notepad++.exe."
-!define ILINE3 "It ensures that an instance call to notepad opens the file and a dialog box to block the caller."
-!define MUI_WELCOMEPAGE_TEXT "${ILINE1}$\r$\n${ILINE2}$\r$\n${ILINE3}$\r$\n$\r$\n$_CLICK"
+!define ILINE2 "This program replaces the notepad.exe by a different editor like Notepad++."
+!define ILINE3 "It creates a blocking systemtray application and sends the open request to NotePad++."
+!define ILINE4 "When the file is getting closed in NotePad++ it releases the blocking call."
+!define MUI_WELCOMEPAGE_TEXT "${ILINE1}$\r$\n${ILINE2}$\r$\n${ILINE3}$\r$\n${ILINE4}$\r$\n$\r$\n$_CLICK"
 
 !insertmacro MUI_PAGE_WELCOME
 !insertmacro MUI_PAGE_LICENSE ".\license.txt"
 ; !ifdef VER_MAJOR & VER_MINOR & VER_REVISION & VER_BUILD
 ; Page custom PageReinstall PageLeaveReinstall
 ; !endif
-!insertmacro MUI_PAGE_COMPONENTS
+
 !insertmacro MUI_PAGE_DIRECTORY
+
+!define MUI_DIRECTORYPAGE_TEXT_TOP "Select folder for NotePad++/plugin"
+!define MUI_DIRECTORYPAGE_TEXT_DESTINATION "Select Notepad++ plugins directory"
+!define MUI_DIRECTORYPAGE_VARIABLE "$PluginsFolder"
+!insertmacro MUI_PAGE_DIRECTORY 
+
 !insertmacro MUI_PAGE_INSTFILES
 
 !define MUI_FINISHPAGE_LINK "Visit the NppLauncher site for the latest news, FAQs and support"
-!define MUI_FINISHPAGE_LINK_LOCATION "http://NppLauncher.sourceforge.net/"
+!define MUI_FINISHPAGE_LINK_LOCATION ${APPWEBSITE}
 
 !insertmacro MUI_PAGE_FINISH
 
@@ -103,6 +118,9 @@ Caption "NppLauncher ${VERSION} Setup"
 
 !insertmacro MUI_LANGUAGE "English"
 
+Function .onInit
+StrCpy $PluginsFolder "$PROGRAMFILES\Notepad++\plugins\"
+FunctionEnd
 ;--------------------------------
 ;Installer Sections
 Section "NppLauncher" SecCore
@@ -117,30 +135,42 @@ Section "NppLauncher" SecCore
   SetOverwrite on
   File .\Release\NppLauncher.exe
   File .\license.txt
+  File .\readme.txt
 
+  SetOutPath $PluginsFolder
+  File .\Release\NppLauncherPlugin.dll
+  
+  IfFileExists  $PluginsFolder\..\NotePad++.exe 0 +3
+    StrCpy $NotePadPath $PluginsFolder -8
+    StrCpy $NotePadPath "$NotePadPath\NotePad++.exe"
+    
   WriteRegStr HKLM "Software\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\notepad.exe" "Debugger" "$INSTDIR\NppLauncher.exe"
   WriteRegStr HKLM "Software\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\notepad.exe" "readme" "call NppLauncher.exe instead of original notepad.exe! To disable this option just remove notepad.exe entry"
-  WriteRegStr HKLM "Software\NppLauncher" "cmd" "$PROGRAMFILES\Notepad++\notepad++.exe"
+  WriteRegStr HKLM "Software\NppLauncher" "cmd" '"$NotePadPath"'
   WriteRegStr HKLM "Software\NppLauncher" "WaitForClose" "yes"
   WriteRegStr HKLM "Software\NppLauncher" "Debug" "no"
-  WriteRegDWORD HKLM "Software\NppLauncher" "WaitTimeMsec" 200
 
   System::Call 'Shell32::SHChangeNotify(i ${SHCNE_ASSOCCHANGED}, i ${SHCNF_IDLIST}, i 0, i 0)'
 
+  WriteRegStr HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\NppLauncher.exe" "" "$INSTDIR\NppLauncher.exe"
 SectionEnd
 
 Section -post
 
-  WriteUninstaller $INSTDIR\uninst-NppLauncher.exe
+  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}" "DisplayName" "${APPNAME}"
+  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}" "UninstallString" "$INSTDIR\uninstall.exe"
+  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}" "DisplayIcon" "$INSTDIR\NppLauncher.exe"
+  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}" "DisplayVersion" "${VERSION}"
+  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}" "URLInfoAbout" "${APPWEBSITE}"
+  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}" "PluginsFolder" $PluginsFolder
+  
+  WriteUninstaller $INSTDIR\uninstall.exe
 
 SectionEnd
 
 ;--------------------------------
 ;Descriptions
 
-!insertmacro MUI_FUNCTION_DESCRIPTION_BEGIN
-  !insertmacro MUI_DESCRIPTION_TEXT ${SecCore} "The core files required to use NppLauncher."
-!insertmacro MUI_FUNCTION_DESCRIPTION_END
 
 ;--------------------------------
 ;Uninstaller Section
@@ -162,6 +192,10 @@ Section Uninstall
 
   System::Call 'Shell32::SHChangeNotify(i ${SHCNE_ASSOCCHANGED}, i ${SHCNF_IDLIST}, i 0, i 0)'
 
+  ReadRegStr $PluginsFolder HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}" "PluginsFolder"
+  IfFileExists $PluginsFolder\NppLauncherPlugin.dll 0 +2
+    Delete $PluginsFolder\NppLauncherPlugin.dll
+
   DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\NppLauncher"
   DeleteRegKey HKLM "Software\NppLauncher"
   DeleteRegKey HKLM "Software\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\notepad.exe"
@@ -171,7 +205,6 @@ Section Uninstall
   SetDetailsPrint listonly
  
   RMDir /r $INSTDIR
-
   SetDetailsPrint both
 
 SectionEnd
