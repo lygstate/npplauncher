@@ -347,18 +347,18 @@ int CreateCommandLine(TCHAR cmd[], TCHAR arg[], DWORD bDebug, LPTSTR lpszArgumen
    }
    return 1;
 }
-
 // main 
-int WINAPI WinMain (HINSTANCE hThisInstance,
-                    HINSTANCE hPrevInstance,
-                    LPSTR lpszArg,
-                    int nFunsterStil)
+int WINAPI
+wWinMain(
+    HINSTANCE hThisInstance,
+    HINSTANCE hPrevInstance,
+    LPWSTR lpCmdLine,
+    int nShowCmd
+    )
 {     
-   TCHAR lpszArgument[MAX_CMD_LEN];
-   lpszArgument[0]=0;
-   // WinMain comes only as char* version.
-   lmb2tc(lpszArgument, lpszArg, MAX_CMD_LEN);
-   lpszArgument[MAX_CMD_LEN-1]=0;
+   TCHAR *lpszArgument;
+
+   lpszArgument = lpCmdLine;
    PROCESS_INFORMATION oProcessInfo;
    STARTUPINFO si;
    _hInst = hThisInstance; // Store instance handle in our global variable

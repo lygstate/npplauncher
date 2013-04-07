@@ -2,13 +2,8 @@
 #define VERSIONINFO_INC
 #define NPPL_MAIN_VERSION TEXT("0.9")
 #if 0 // NSIS section
-!define NPPL_MAIN_VERSION '0.9.$WCREV$$WCMODS?+:$'
+!define NPPL_MAIN_VERSION 0.9.9
 #endif
-#define SVNREVINFO  TEXT("$WCREV$$WCMODS?+:$")
-#define SVNREVISION TEXT("$WCREV$")
-#define SVNMODIFIED TEXT("$WCMODS?Unclean:Clean$")
-#define SVNDATE     TEXT("$WCDATE$")
-#define SVNREVRANGE TEXT("$WCRANGE$")
-#define SVNMIXED    TEXT("$WCMIXED?Mixed:Single$")
-#define SVNURL      TEXT("$WCURL$")
+#define SVNREVINFO  TEXT("9")
+#define SVNDATE     TEXT("")
 #endif // VERSIONINFO_INC
