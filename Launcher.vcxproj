@@ -104,6 +104,10 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="NppLauncher.nsi" />
+    <None Include="versionInfo.inc" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="SystemTraySDK.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
