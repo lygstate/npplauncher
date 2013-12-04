@@ -3,6 +3,8 @@ NppLauncher                                                                   20
 This tool is based on the sources from Stepho 2005
 Additions are done by mattesh(at)gmx.net to ensure function on all windows systems 
 including Windows 7. As well as adding the same to an installer program.
+Convert to Notepad++ plugin by luoyonggang(at)gmail.com to getting it to be easily installed,
+also make sure it can support for Unicode.
 
 It's a little Notepad++ launcher which allows you to replace notepad.exe completely 
 by Notepad++. (Without need for removing anything from the windows system.)
