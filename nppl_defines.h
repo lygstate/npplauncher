@@ -20,20 +20,18 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #define NPPL_DEFINES_H
 
 #include "versioninfo.inc"
-#define NPPL_VERSION TEXT("0.9")
 #define NPPL_VER_NAME TEXT("Version ")
 #define NPPL_APP_TITLE TEXT("NppLauncher")
 #define NPPL_SPACE TEXT(" ")
 #define NPPL_ID_FILE_CLOSED 103401
 #define NPPL_ID_PROG_CLOSED 103402
 #define NPPL_HEADLINE NPPL_APP_TITLE NPPL_SPACE NPPL_VERSION
-#define NPPL_REV TEXT(" Rev. ")
+#define NPPL_VERSION_INFO NPPL_VER_NAME NPPL_VERSION
 #define NPPL_SPC TEXT(" ")
-#define NPPL_VERSION_INFO NPPL_VER_NAME NPPL_VERSION NPPL_REV NPPL_SPC // NPPL_SPC SVNMODIFIED NPPL_SPC SVNMIXED
 
 #define NPPL_PLGN_TITLE TEXT("NppLauncher Plugin ")
 #define NPPL_PLGN_HELP TEXT("\n\
-Copyright: Mattes H.\n\
+Copyright: Yonggang Luo, Mattes H.\n\
 This plugin is the hook for NppLauncher observing if an edit window\n\
 becomes closed. If you close a window in NoptePad++ this plugin\n\
 will send a release message to NppLauncher systemtray App to release \n\
