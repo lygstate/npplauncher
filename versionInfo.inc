@@ -1,0 +1,7 @@
+#ifndef VERSIONINFO_INC
+#define VERSIONINFO_INC
+#define NPPL_MAIN_VERSION TEXT("0.9")
+#if 0 // NSIS section
+!define NPPL_MAIN_VERSION 0.9.10
+#endif
+#endif // VERSIONINFO_INC

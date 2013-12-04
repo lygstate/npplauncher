@@ -3,6 +3,5 @@ Release
 *.exe
 *.user
 *.suo
-versionInfo.inc
 *.sdf
 *.opensdf
