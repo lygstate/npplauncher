@@ -5,3 +5,4 @@ Release
 *.suo
 *.sdf
 *.opensdf
+/bin
