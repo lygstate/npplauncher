@@ -4,7 +4,7 @@ cd /d %~dp0
 
 if defined ENABLE_ADMIN goto run_as_admin
 set ENABLE_ADMIN=""
-call %~dp0request-admin.bat %~dpnx0
+call request-admin.bat %~dpnx0
 goto :finished
 
 :run_as_admin
