@@ -5,7 +5,7 @@
 // Author  : Mattes H. mattesh(at)gmx.net
 // Creation : 2013-01-13
 // The source is based on an idea from Stepho (superstepho.free.fr)
-// Création : 2005-08-22
+// Creation : 2005-08-22
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -54,7 +54,7 @@
 Please consider checking the registry at HKLM/Software/NppLauncher/.")
 
 static CSystemTray _TrayIcon;
-bool bDebug=0;
+bool bDebug = 0;
 static std::wstring filename;
 #ifndef length_of
 #define length_of(x) (sizeof(x)/sizeof((x)[0]))
@@ -62,86 +62,89 @@ static std::wstring filename;
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
-   int wmId, wmEvent;
-   
-   switch (message) 
-   {
-   case WM_COPYDATA:
-      if(lParam){
-         COPYDATASTRUCT * pcds = (COPYDATASTRUCT *)lParam;
-         if (pcds->dwData == NPPL_ID_FILE_CLOSED) {
-            LPCWSTR lpszString = (LPCWSTR)(pcds->lpData);
-            DBGW1("WndProc: got message NPPL_ID_FILE_CLOSED: %s", lpszString);
-			if (filename == lpszString) { // TOOD: use more robust filename compare function
-               PostQuitMessage(0);
-            } else {
-               if(bDebug) { 
-                  MessageBox(NULL, lpszString, NPPL_APP_TITLE L" Not mine...", MB_OK);
-               }
-            }
-         }
-      } else  {
-         DBG1("WndProc: got message WM_COPYDATA 0x%x", lParam);  
-      }
-      break;
-   case WM_ICON_NOTIFY:
-      return _TrayIcon.OnTrayNotification(wParam, lParam);
+	int wmId, wmEvent;
 
-   case WM_COMMAND:
-      wmId    = LOWORD(wParam); 
-      wmEvent = HIWORD(wParam); 
-      // Parse the menu selections:
-      switch (wmId)
-      {
-      case IDM_ABOUT:
-         ::MessageBox(hWnd, NPPL_PRG_HELP_TEXT, NPPL_HEADLINE, MB_OK);
-         break;
-      case IDM_EXIT:
-         // cause call the close the program
-         DestroyWindow(hWnd);
-         break;
+	switch (message)
+	{
+	case WM_COPYDATA:
+		if (lParam){
+			COPYDATASTRUCT * pcds = (COPYDATASTRUCT *)lParam;
+			if (pcds->dwData == NPPL_ID_FILE_CLOSED) {
+				LPCWSTR lpszString = (LPCWSTR)(pcds->lpData);
+				DBGW1("WndProc: got message NPPL_ID_FILE_CLOSED: %s", lpszString);
+				if (filename == lpszString) { // TOOD: use more robust filename compare function
+					PostQuitMessage(0);
+				}
+				else {
+					if (bDebug) {
+						std::wstring msg = filename + L"!=" + lpszString;
+						MessageBox(NULL, msg.c_str(), NPPL_APP_TITLE L" Not mine...", MB_OK);
+					}
+				}
+			}
+		}
+		else  {
+			DBG1("WndProc: got message WM_COPYDATA 0x%x", lParam);
+		}
+		break;
+	case WM_ICON_NOTIFY:
+		return _TrayIcon.OnTrayNotification(wParam, lParam);
 
-      default:
-         return DefWindowProc(hWnd, message, wParam, lParam);
-      }
-      break;
+	case WM_COMMAND:
+		wmId = LOWORD(wParam);
+		wmEvent = HIWORD(wParam);
+		// Parse the menu selections:
+		switch (wmId)
+		{
+		case IDM_ABOUT:
+			::MessageBox(hWnd, NPPL_PRG_HELP_TEXT, NPPL_HEADLINE, MB_OK);
+			break;
+		case IDM_EXIT:
+			// cause call the close the program
+			DestroyWindow(hWnd);
+			break;
 
-   case NPPL_ID_PROG_CLOSED:
-      DBG1("WndProc: got message NPPL_ID_FILE_CLOSED %x", lParam);  
-      // close my self and inform the others
-      PostQuitMessage(0);
-      return DefWindowProc(hWnd, message, wParam, lParam);
+		default:
+			return DefWindowProc(hWnd, message, wParam, lParam);
+		}
+		break;
 
-   case WM_DESTROY:
-      PostQuitMessage(0);
-      break;
-   default:
-      return DefWindowProc(hWnd, message, wParam, lParam);
-   }
-   return 0;
+	case NPPL_ID_PROG_CLOSED:
+		DBG1("WndProc: got message NPPL_ID_FILE_CLOSED %x", lParam);
+		// close my self and inform the others
+		PostQuitMessage(0);
+		return DefWindowProc(hWnd, message, wParam, lParam);
+
+	case WM_DESTROY:
+		PostQuitMessage(0);
+		break;
+	default:
+		return DefWindowProc(hWnd, message, wParam, lParam);
+	}
+	return 0;
 }
 
 // register my application window class
 ATOM MyRegisterClass(HINSTANCE hInstance)
 {
-   WNDCLASSEX wcex;
-   TCHAR szTitle[MAX_TITLE_LEN]=NPPL_APP_TITLE;
+	WNDCLASSEX wcex;
+	TCHAR szTitle[MAX_TITLE_LEN] = NPPL_APP_TITLE;
 
-   // Initialize global strings
-   wcex.cbSize = sizeof(WNDCLASSEX); 
-   wcex.style			= CS_HREDRAW | CS_VREDRAW;
-   wcex.lpfnWndProc     = (WNDPROC)WndProc;
-   wcex.cbClsExtra		= 0;
-   wcex.cbWndExtra		= 0;
-   wcex.hInstance		= hInstance;
-   wcex.hIcon			= ::LoadIcon(hInstance, (LPCTSTR)IDI_NPP_0);
-   wcex.hCursor		    = ::LoadCursor(NULL, IDC_ARROW);
-   wcex.hbrBackground	= (HBRUSH)(COLOR_WINDOW+1);
-   wcex.lpszMenuName	= MAKEINTRESOURCE(IDR_CNTXT_MENU);  // TODO: check if this is correct
-   wcex.lpszClassName	= szTitle;
-   wcex.hIconSm		    = ::LoadIcon(wcex.hInstance, (LPCTSTR)IDI_NPP_0);
+	// Initialize global strings
+	wcex.cbSize = sizeof(WNDCLASSEX);
+	wcex.style = CS_HREDRAW | CS_VREDRAW;
+	wcex.lpfnWndProc = (WNDPROC)WndProc;
+	wcex.cbClsExtra = 0;
+	wcex.cbWndExtra = 0;
+	wcex.hInstance = hInstance;
+	wcex.hIcon = ::LoadIcon(hInstance, (LPCTSTR)IDI_NPP_0);
+	wcex.hCursor = ::LoadCursor(NULL, IDC_ARROW);
+	wcex.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
+	wcex.lpszMenuName = MAKEINTRESOURCE(IDR_CNTXT_MENU);  // TODO: check if this is correct
+	wcex.lpszClassName = szTitle;
+	wcex.hIconSm = ::LoadIcon(wcex.hInstance, (LPCTSTR)IDI_NPP_0);
 
-   return ::RegisterClassEx(&wcex);
+	return ::RegisterClassEx(&wcex);
 }
 
 // initialize my instance and show the tray icon
@@ -179,11 +182,11 @@ BOOL InitInstance(HINSTANCE hInstance, std::wstring arg/*, int nCmdShow*/)
 // read the parameters from registry how to behave
 bool ReadOptions(std::wstring notepadCmd, bool& bWaitForNotepadClose, /*DWORD& uWaitTime,*/ bool& bDebug)
 {
-   notepadCmd = L"notepad++.exe"; // The commands path is relative to this executable, test if the executable exist, if doesn't ,then return false
-   bWaitForNotepadClose = true; // Flag for waiting or note waiting for notepad++ to exit. "yes" | "no"
-   bDebug = false; // default not to debug "yes" | "no"
+	notepadCmd = L"notepad++.exe"; // The commands path is relative to this executable, test if the executable exist, if doesn't ,then return false
+	bWaitForNotepadClose = true; // Flag for waiting or note waiting for notepad++ to exit. "yes" | "no"
+	bDebug = false; // default not to debug "yes" | "no"
 
-   return true;
+	return true;
 }
 
 // create from lpszArgument a valid arguments list for program to be called 
@@ -268,7 +271,7 @@ bool LaunchNotepad(STARTUPINFO& si, PROCESS_INFORMATION& oProcessInfo, std::wstr
 	memset(&si, 0, sizeof(si));
 	si.cb = sizeof(si);
 	memset(&oProcessInfo, 0, sizeof(oProcessInfo));
-	// launcher the Notepad++
+	// launch the Notepad++
 	std::vector<wchar_t> cmdStr(cmd.c_str(), cmd.c_str() + cmd.size() + 1);
 	if (CreateProcessW(NULL, cmdStr.data(), NULL, NULL, false, 0, NULL, NULL, &si, &oProcessInfo) == FALSE) {
 		LPTSTR lpMsgBuf = 0;
@@ -288,13 +291,12 @@ bool LaunchNotepad(STARTUPINFO& si, PROCESS_INFORMATION& oProcessInfo, std::wstr
 }
 
 // main 
-int WINAPI
-wWinMain(
-    HINSTANCE hThisInstance,
-    HINSTANCE hPrevInstance,
-    LPWSTR lpCmdLine,
-    int nShowCmd
-    )
+int WINAPI wWinMain(
+	HINSTANCE hThisInstance,
+	HINSTANCE hPrevInstance,
+	LPWSTR lpCmdLine,
+	int nShowCmd
+	)
 {
 	std::wstring cmd;
 	bool bWaitForNotepadClose = true;
@@ -325,7 +327,7 @@ wWinMain(
 	PROCESS_INFORMATION oProcessInfo;
 	if (LaunchNotepad(si, oProcessInfo, cmd) && bWaitForNotepadClose)
 	{
-		// Wait until child process exits.
+		// Wait until child process to exit.
 
 		std::wstring ballonMsg = std::wstring(CAPTION) + L":" + filename;
 		_TrayIcon.ShowBalloon(TEXT("Double click this icon when editing is finished..."), ballonMsg.c_str(), 1);
@@ -340,7 +342,7 @@ wWinMain(
 	}
 
 	// on program exit.
-   CloseHandle( oProcessInfo.hProcess );
-   CloseHandle( oProcessInfo.hThread );
-   return 0;
+	CloseHandle(oProcessInfo.hProcess);
+	CloseHandle(oProcessInfo.hThread);
+	return 0;
 }
