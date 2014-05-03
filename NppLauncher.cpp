@@ -179,10 +179,76 @@ BOOL InitInstance(HINSTANCE hInstance, std::wstring arg/*, int nCmdShow*/)
 	return TRUE;
 }
 
+std::wstring QueryErrorString() {
+	// Retrieve the system error message for the last-error code
+
+	LPWSTR lpMsgBuf = 0;
+	DWORD dw = GetLastError();
+	FormatMessageW(
+		FORMAT_MESSAGE_ALLOCATE_BUFFER |
+		FORMAT_MESSAGE_FROM_SYSTEM |
+		FORMAT_MESSAGE_IGNORE_INSERTS,
+		NULL,
+		dw,
+		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+		(LPWSTR)&lpMsgBuf,
+		0, NULL);
+	std::wstring ret = lpMsgBuf;
+	LocalFree(lpMsgBuf);
+	return std::move(ret);
+}
+
+bool QueryRegistryString(HKEY hKey, std::wstring key, std::wstring &value) {
+	DWORD iType = REG_NONE;
+	value.reserve(8192);
+	DWORD iDataSize = value.capacity() * sizeof(wchar_t);
+	LSTATUS errorCode = ::RegQueryValueExW(hKey, L"Debugger", NULL, &iType, (LPBYTE)value.data(), &iDataSize);
+	if (iType != REG_SZ)
+	{
+		value.resize(0);
+		return false;
+	}
+	if (errorCode == ERROR_MORE_DATA) {
+		if (iDataSize & 1) ++iDataSize;
+		DWORD sz = iDataSize >> 1;
+		value.reserve(sz + 1);
+		value.resize(sz);
+		value[sz] = 0;
+		errorCode = ::RegQueryValueExW(hKey, L"Debugger", NULL, &iType, (LPBYTE)value.data(), &iDataSize);
+	}
+	if (errorCode != ERROR_SUCCESS) {
+		value.resize(0);
+		return false;
+	}
+	return true;
+}
+
+std::wstring QueryNotepadCommand() {
+	HKEY hKey;
+	LSTATUS errorCode = RegOpenKeyExW(
+		HKEY_LOCAL_MACHINE,
+		L"SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\notepad.exe",
+		0,
+		KEY_READ,
+		&hKey);
+	if (errorCode == ERROR_SUCCESS)
+	{
+		std::wstring notepadImage;
+		QueryRegistryString(hKey, L"Debugger", notepadImage);
+		RegCloseKey(hKey);
+	} else {
+		if (bDebug) {
+			std::wstring msg = L"Open registry caused error" + QueryErrorString();
+			MessageBoxW(NULL, msg.c_str(), L"Error opening registry", MB_OK);
+		}
+	}
+	return L"notepad++.exe";
+}
+
 // read the parameters from registry how to behave
 bool ReadOptions(std::wstring notepadCmd, bool& bWaitForNotepadClose, /*DWORD& uWaitTime,*/ bool& bDebug)
 {
-	notepadCmd = L"notepad++.exe"; // The commands path is relative to this executable, test if the executable exist, if doesn't ,then return false
+	notepadCmd = QueryNotepadCommand(); // The commands path is relative to this executable, test if the executable exist, if doesn't ,then return false
 	bWaitForNotepadClose = true; // Flag for waiting or note waiting for notepad++ to exit. "yes" | "no"
 	bDebug = false; // default not to debug "yes" | "no"
 
