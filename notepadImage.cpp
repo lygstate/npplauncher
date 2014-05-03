@@ -121,7 +121,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	case NPPL_ID_PROG_CLOSED:
 		DBG1("WndProc: got message NPPL_ID_FILE_CLOSED %x", lParam);
 		// close my self and inform the others
-		PostQuitMessage(0);
+		//NOTE: not need to exit in NPPL_ID_PROG_CLOSED at the current time: PostQuitMessage(0);
 		return DefWindowProc(hWnd, message, wParam, lParam);
 
 	case WM_DESTROY:
@@ -463,7 +463,7 @@ bool LaunchProcess(STARTUPINFO& si, PROCESS_INFORMATION& oProcessInfo, std::wstr
 }
 
 
-DWORD FoundProcessPid(std::wstring const & processExecutable)
+HANDLE FoundProcessHandle(std::wstring const & processExecutable)
 {
 	std::vector<DWORD> processList;
 	processList.resize(16);
@@ -498,20 +498,17 @@ DWORD FoundProcessPid(std::wstring const & processExecutable)
 		{
 			std::wstring currentFilepath = GetModuleExecutable(hProcess, hMod);
 			if (currentFilepath == processExecutable) {
-				dw = processList[i];
+				return hProcess;
 			}
 		}
-		CloseHandle(hProcess);
 	}
-	return dw;
+	return NULL;
 }
 
 
-BOOL IsProcessRunning(DWORD pid)
+BOOL IsProcessRunning(HANDLE hProcess)
 {
-	HANDLE process = OpenProcess(SYNCHRONIZE, FALSE, pid);
-	DWORD ret = WaitForSingleObject(process, 0);
-	CloseHandle(process);
+	DWORD ret = WaitForSingleObject(hProcess, 0);
 	return ret == WAIT_TIMEOUT;
 }
 
@@ -549,7 +546,9 @@ int WINAPI wWinMain(
 	{
 		return -1; // error case
 	}
-
+	if (filename.size() == 0) { // No need to wait for newly created files.
+		bWaitForNotepadClose = false;
+	}
 	if (bWaitForNotepadClose) {
 		// Wait until child process to exit.
 
@@ -567,16 +566,12 @@ int WINAPI wWinMain(
 			<< dw << L": " << errorMsg << L"\nPlease consider checking the configurations in notepadImage.ini";
 		MessageBoxW(NULL, msg.str().c_str(), TEXT("notepadImage Error"), MB_OK);
 	} else if (bWaitForNotepadClose) {
-		DWORD pid = FoundProcessPid(commandline);
 		// message loop for tray icon:
 		MSG msg;
 		while (GetMessage(&msg, NULL, 0, 0))
 		{
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
-			if (!IsProcessRunning(pid)) {
-				break;
-			}
 		}
 		CloseHandle(oProcessInfo.hProcess);
 		CloseHandle(oProcessInfo.hThread);

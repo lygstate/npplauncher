@@ -124,77 +124,118 @@ extern "C" __declspec(dllexport) FuncItem * getFuncsArray(int *nbF)
    return _funcItem;
 }
 
+struct EnumMessage {
+	UINT msgID;
+	WPARAM wparam;
+	LPARAM lparam;
+};
+
+BOOL CALLBACK EnumWindowsProc(HWND hWnd, LPARAM lParam)
+{
+	std::wstring str;
+	str.resize(1024);
+	int sz = GetClassNameW(hWnd, (LPWSTR)str.data(), str.size());
+	if (sz <= 0) {
+		return TRUE;
+	}
+	str[sz] = 0;
+	str.resize(sz);
+	if (str == NPPL_APP_TITLE) {
+		EnumMessage *msg = (EnumMessage *)lParam;
+		if (msg != NULL) {
+			::SendMessageW(hWnd, msg->msgID, msg->wparam, (msg->lparam));
+		}
+	}
+	return TRUE;
+}
+
+std::wstring getCurrentFilename(uptr_t bufferId) {
+	int len = (int)execute(nppHandle, NPPM_GETFULLPATHFROMBUFFERID, bufferId);
+	if (len <= 0) {
+		return L"";
+	}
+	std::wstring str;
+	str.resize(len + 1);
+	len = (int)execute(nppHandle, NPPM_GETFULLPATHFROMBUFFERID, bufferId, (LPARAM)str.data());
+	if (len <= 0) {
+		return L"";
+	}
+	str[len] = 0;
+	str.resize(len + 1);
+	return std::move(str);
+}
+
+void reportMessage(std::wstring const &savedPath) {
+	COPYDATASTRUCT cpst;
+	cpst.dwData = NPPL_ID_FILE_CLOSED;
+	cpst.cbData = savedPath.size() * sizeof(wchar_t);
+	cpst.lpData = (PVOID)savedPath.c_str();
+	DBGW1("beNotified() sending closed message for %s", savedPath.c_str());
+	//DBG1("beNotified() sending closed message for %s", s.c_str());
+	EnumMessage msg;
+	msg.msgID = WM_COPYDATA;
+	msg.wparam = (WPARAM)_nppData._nppHandle;
+	msg.lparam = (LPARAM)&cpst;
+	EnumWindows((WNDENUMPROC)EnumWindowsProc, (LPARAM)&msg);
+}
+
+std::wstring savedPath;
 
 extern "C" __declspec(dllexport) void beNotified(SCNotification *notification)
 {
-   static TCHAR* path=0;
-   static uptr_t BufferId=0;
+	static uptr_t CloseId = 0;
 
-   switch (notification->nmhdr.code) 
-   {
-   case NPPN_FILEBEFORECLOSE:
-      {
-         BufferId = notification->nmhdr.idFrom;
-         DBG2("beNotified() NPPN_FILEBEFORECLOSE hwndNpp = %d BufferID = %d",
-            notification->nmhdr.hwndFrom, BufferId);
-         int len = (int)execute(nppHandle, NPPM_GETFULLPATHFROMBUFFERID, notification->nmhdr.idFrom);
-         if (len <= 0) {
-            break;
-         }
-         path = new TCHAR[len+1];
-         len = (int)execute(nppHandle, NPPM_GETFULLPATHFROMBUFFERID, BufferId, (LPARAM)path);
-         std::string s = wstring2string(path, CP_ACP);
-         DBG2("beNotified() NPPN_FILEBEFORECLOSE BufferID = %d Path '%s' ",
-            notification->nmhdr.idFrom, s.c_str());
-         break;
-      }
-   case NPPN_FILECLOSED:
-      {
-         if(BufferId == notification->nmhdr.idFrom){
-            int pos = (int)execute(nppHandle, NPPM_GETPOSFROMBUFFERID, BufferId);
-            DBG2("beNotified() NPPN_FILECLOSED BufferID = %d pos %d ", 
-               BufferId, pos);
-            if(pos == -1) {
-               // this was the last window we shall close the Launcher
-               HWND hWnd = ::FindWindow(NPPL_APP_TITLE, NULL);
-               if (hWnd != NULL) {
-                  //std::string s = wstring2string(path, CP_ACP);
-                  COPYDATASTRUCT cpst;                  
-                  cpst.dwData = NPPL_ID_FILE_CLOSED;
-                  cpst.cbData = ((DWORD)lstrlen(path)+1)*sizeof(TCHAR);
-                  cpst.lpData = path;
-                  DBGW1("beNotified() sending closed message for %s", path);
-                  //DBG1("beNotified() sending closed message for %s", s.c_str());
-                  ::SendMessage(hWnd, WM_COPYDATA, (WPARAM)_nppData._nppHandle, (LPARAM)&cpst);
-               } else {
-                  DBG0("beNotified() Didn't find a sutible window for close message.");
-               }
-            } else {
-               DBG0("beNotified() this was not the last window of the file.");
-            }
+	switch (notification->nmhdr.code)
+	{
+	case NPPN_FILEBEFORESAVE: {
+		uptr_t SaveId = notification->nmhdr.idFrom;
+		DBGW2("beNotified() NPPN_FILEBEFORESAVE hwndNpp = %d SaveId = %d",
+			notification->nmhdr.hwndFrom, SaveId);
+		savedPath = getCurrentFilename(SaveId);
+		break;
+	}
+	case NPPN_FILEBEFORECLOSE:
+	{
+		CloseId = notification->nmhdr.idFrom;
+		DBGW2("beNotified() NPPN_FILEBEFORECLOSE hwndNpp = %d CloseId = %d",
+			notification->nmhdr.hwndFrom, CloseId);
+		savedPath = getCurrentFilename(CloseId);
+		DBGW2("beNotified() NPPN_FILEBEFORECLOSE CloseId = %d Path '%s' ",
+			notification->nmhdr.idFrom, savedPath.c_str());
+		break;
+	}
+	case NPPN_FILESAVED: {
+		std::wstring currentPath = getCurrentFilename(notification->nmhdr.idFrom);
+		if (currentPath != savedPath) { // It's save as
+			reportMessage(savedPath);
+		}
+		break;
+	}
+	case NPPN_FILECLOSED:
+	{
+		if (CloseId == notification->nmhdr.idFrom) {
+			int pos = (int)execute(nppHandle, NPPM_GETPOSFROMBUFFERID, CloseId);
+			DBG2("beNotified() NPPN_FILECLOSED CloseId = %d pos %d ", CloseId, pos);
+			if (pos == -1) {
+				reportMessage(savedPath);
+			}
+		}
+		CloseId = 0;
+		break;
+	}
+	case NPPN_SHUTDOWN:
+	{
+		EnumMessage msg;
+		msg.msgID = NPPL_ID_PROG_CLOSED;
+		msg.wparam = 0;
+		msg.lparam = 0;
+		EnumWindows((WNDENUMPROC)EnumWindowsProc, (LPARAM)&msg);
+		break;
+	}
 
-            if(path) {
-               delete[] path;
-               path=0;
-            }
-         }
-         break;
-      }
-   case NPPN_SHUTDOWN:
-      {
-         HWND hWnd = ::FindWindow(NPPL_APP_TITLE, NULL);
-         if (hWnd != NULL) {
-            DBG0("beNotified() sending general close message... ");
-            ::SendMessage(hWnd, NPPL_ID_PROG_CLOSED, 0, (LPARAM)0);
-         } else {
-            DBG0("beNotified() Didn't find a sutible window for general close message.");
-         }
-         break;
-      }
-
-   default:
-      return;
-   }
+	default:
+		return;
+	}
 }
 
 // http://sourceforge.net/forum/forum.php?forum_id=482781
