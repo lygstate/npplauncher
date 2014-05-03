@@ -331,7 +331,7 @@ std::wstring StripFilename(std::wstring const& arg) {
 		}
 		break;
 	}
-	return std::move(arg.substr(pos, end + 1));
+	return std::move(arg.substr(pos, end + 1 - pos));
 }
 
 std::wstring GetFilenameParameter(wstring const& arguments) {
@@ -344,32 +344,47 @@ std::wstring GetFilenameParameter(wstring const& arguments) {
 	};
 
 	std::wstring filename = L"";
-	int argCount;
-	std::vector<wstring> argList;
 
-	LPWSTR *szArgList = CommandLineToArgvW(arguments.c_str(), &argCount);
-	if (szArgList == NULL) {
-		return std::move(filename);
-	}
-
-	size_t skippedCount = 0;
-	for (int i = 0; i < argCount; ++i) {
-		std::wstring arg = szArgList[i];
-		size_t sz = arg.size();
-		arg = StripFilename(arg);
-		if (arg.size() == 0) {
-			skippedCount += sz;
+	size_t i = 0;
+	while (i <arguments.size()) {
+		if (iswspace(arguments[i])) {
+			++i;
 			continue;
 		}
+		size_t j = i;
+		if (arguments[i] == L'\"') {
+			++j;
+			while (j < arguments.size()) {
+				++j;
+				if (arguments[j - 1] != L'\"') {
+					continue;
+				}
+				if (j >= arguments.size()) {
+					break;
+				}
+				if (iswspace(arguments[j])) {
+					break;
+				}
+				++j;
+			}
+			++j;
+		}
+		else
+		{
+			while (j < arguments.size() && !iswspace(arguments[j])) {
+				++j;
+			}
+		}
+		std::wstring arg = StripFilename(arguments.substr(i, j - i));
 		std::wstring upperApp = FullPath(arg);
-		for (size_t i = 0; i < upperApp.size(); ++i) {
-			upperApp[i] = towupper(upperApp[i]);
+		for (size_t k = 0; k < upperApp.size(); ++k) {
+			upperApp[k] = towupper(upperApp[k]);
 		}
 		size_t idx = std::wstring::npos;
-		for (int i = 0; i < length_of(notepadNames); ++i) {
-			idx = upperApp.find(notepadNames[i]);
+		for (int k = 0; k < length_of(notepadNames); ++k) {
+			idx = upperApp.find(notepadNames[k]);
 			if (idx != std::wstring::npos) {
-				std::wstring notepad = notepadNames[i];
+				std::wstring notepad = notepadNames[k];
 				idx += notepad.size();
 				if (idx == upperApp.size())
 					break;
@@ -380,13 +395,11 @@ std::wstring GetFilenameParameter(wstring const& arguments) {
 		if (idx == std::wstring::npos ) {
 			break;
 		}
-		skippedCount += sz;
+		i = j;
 	}
 
-	LocalFree(szArgList);
-
-	if (skippedCount < arguments.size()) {
-		filename = StripFilename(FullPath(arguments.substr(skippedCount)));
+	if (i < arguments.size()) {
+		filename = FullPath(StripFilename(arguments.substr(i)));
 	} else {
 		return std::move(filename);
 	}
@@ -420,7 +433,7 @@ bool CreateCommandLine(std::wstring& cmd, std::wstring& filename, boolean const&
 			return false;
 	}
 
-	filename = GetFilenameParameter(arguments);
+	filename = GetFilenameParameter(GetCommandLineW());
 
 	if (filename.size() > 0) {
 		cmd = cmd + L" \"" + filename + L"\"";
