@@ -286,7 +286,7 @@ std::wstring QueryNotepadCommand() {
 }
 
 // read the parameters from registry how to behave
-bool ReadOptions(std::wstring notepadCmd, bool& bWaitForNotepadClose, /*DWORD& uWaitTime,*/ bool& bDebug)
+bool ReadOptions(std::wstring& notepadCmd, bool& bWaitForNotepadClose, /*DWORD& uWaitTime,*/ bool& bDebug)
 {
 	notepadCmd = QueryNotepadCommand(); // The commands path is relative to this executable, test if the executable exist, if doesn't ,then return false
 	bWaitForNotepadClose = true; // Flag for waiting or note waiting for notepad++ to exit. "yes" | "no"
@@ -327,8 +327,11 @@ bool CreateCommandLine(std::wstring& cmd, std::wstring& filename, boolean const&
 			break;
 		}
 	}
-	if (idx != std::wstring::npos)
+	if (idx != std::wstring::npos) {
 		idx += notepad.size();
+	} else {
+		idx = 0;
+	}
 	while (idx < arguments.size() && iswspace(arguments[idx])) ++idx;
 
 	if (idx < arguments.size() && arguments[idx] == L'\"') ++idx;
