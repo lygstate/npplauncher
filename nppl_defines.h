@@ -21,7 +21,7 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
 #include "versioninfo.inc"
 #define NPPL_VER_NAME TEXT("Version ")
-#define NPPL_APP_TITLE TEXT("NppLauncher")
+#define NPPL_APP_TITLE TEXT("notepadImage")
 #define NPPL_SPACE TEXT(" ")
 #define NPPL_ID_FILE_CLOSED 103401
 #define NPPL_ID_PROG_CLOSED 103402
@@ -29,14 +29,14 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #define NPPL_VERSION_INFO NPPL_VER_NAME NPPL_VERSION
 #define NPPL_SPC TEXT(" ")
 
-#define NPPL_PLGN_TITLE TEXT("NppLauncher Plugin ")
+#define NPPL_PLGN_TITLE TEXT("notepadImage Plugin ")
 #define NPPL_PLGN_HELP TEXT("\n\
 Copyright: Yonggang Luo, Mattes H.\n\
-This plugin is the hook for NppLauncher observing if an edit window\n\
+This plugin is the hook for notepadImage observing if an edit window\n\
 becomes closed. If you close a window in NoptePad++ this plugin\n\
-will send a release message to NppLauncher systemtray App to release \n\
+will send a release message to notepadImage systemtray App to release \n\
 the blocked call.\n\
-For further information see http://sourceforge.net/projects/npplauncher/")
+For further information see http://sourceforge.net/projects/notepadImage/")
 
 #define NPPL_PLGN_HELP_TEXT NPPL_PLGN_TITLE NPPL_VERSION_INFO NPPL_PLGN_HELP
 
@@ -47,7 +47,7 @@ It creates a blocking application in the systemtray and sends a request\n\
 to open the text file in NotePad++.\n\
 When the file is getting closed in NotePad++ it receives a close message\n\
 and releases the blocking call.\n\
-For further information see http://sourceforge.net/projects/npplauncher/")
+For further information see http://sourceforge.net/projects/notepadImage/")
 
 #define NPPL_PRG_HELP_TEXT NPPL_APP_TITLE NPPL_SPC NPPL_VERSION_INFO NPPL_PRG_HELP
 

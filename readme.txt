@@ -1,4 +1,4 @@
-NppLauncher                                                                   2013-02-09
+notepadImage                                                                   2013-02-09
 
 This tool is based on the sources from Stepho 2005
 Additions are done by mattesh(at)gmx.net to ensure function on all windows systems 
@@ -10,12 +10,12 @@ It's a little Notepad++ launcher which allows you to replace notepad.exe complet
 by Notepad++. (Without need for removing anything from the windows system.)
 
 Concept:
-      NppLauncher make use of a debugger feature in Windows the system will call a hooked 
+      notepadImage make use of a debugger feature in Windows the system will call a hooked 
       process with appended parameters to allow debugging the intended application.
       This hook application will be call whenever the correct application was resolved.
       
       notepad.exe receives always only one parameter which is now just deferred to Notepad++.
-      Because notepad.exe is a blocking executable, also NppLauncher behaves blocking by 
+      Because notepad.exe is a blocking executable, also notepadImage behaves blocking by 
       default. If you like to have it non-blocking just change the setting WaitForClose in 
       the registry. The blocked process will show either the first Notepad++ window and wait
       until the file get closed or even Notepad++ closes. 

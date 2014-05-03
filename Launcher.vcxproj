@@ -14,7 +14,7 @@
     <ProjectGuid>{FDA85FA9-A7E0-4272-AC75-9A3D1BAD43E4}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>Launcher</RootNamespace>
-    <ProjectName>NppLauncher</ProjectName>
+    <ProjectName>notepadImage</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -96,14 +96,14 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="NppLauncher.cpp" />
+    <ClCompile Include="notepadImage.cpp" />
     <ClCompile Include="SystemTraySDK.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="NppLauncher.rc" />
+    <ResourceCompile Include="notepadImage.rc" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="NppLauncher.nsi" />
+    <None Include="notepadImage.nsi" />
     <None Include="versionInfo.inc" />
   </ItemGroup>
   <ItemGroup>
