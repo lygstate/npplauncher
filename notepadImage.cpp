@@ -316,6 +316,24 @@ bool ReadOptions(std::wstring& notepadCmd, bool& bWaitForNotepadClose, /*DWORD& 
 	return true;
 }
 
+std::wstring StripFilename(std::wstring const& arg) {
+	size_t pos = 0;
+	size_t end = arg.size() - 1;
+
+	while (pos <= end) {
+		if (iswspace(arg[pos]) || arg[pos] == L'\"') {
+			++pos;
+			continue;
+		}
+		if (iswspace(arg[end]) || arg[end] == L'\"') {
+			--end;
+			continue;
+		}
+		break;
+	}
+	return std::move(arg.substr(pos, end + 1));
+}
+
 std::wstring GetFilenameParameter(wstring const& arguments) {
 	// different calling conventions
 	static wstring const notepadNames[] = {
@@ -333,37 +351,17 @@ std::wstring GetFilenameParameter(wstring const& arguments) {
 	if (szArgList == NULL) {
 		return std::move(filename);
 	}
+
+	size_t skippedCount = 0;
 	for (int i = 0; i < argCount; ++i) {
 		std::wstring arg = szArgList[i];
+		size_t sz = arg.size();
+		arg = StripFilename(arg);
 		if (arg.size() == 0) {
+			skippedCount += sz;
 			continue;
 		}
-		size_t pos = 0;
-		size_t end = arg.size() - 1;
-		while (pos <= end) {
-			if (iswspace(arg[pos]) || arg[pos] == L'\"') {
-				++pos;
-				continue;
-			}
-			if (iswspace(arg[end]) || arg[end] == L'\"') {
-				--end;
-				continue;
-			}
-			break;
-		}
-		if (pos <= end) {
-			argList.push_back(arg.substr(pos, end + 1));
-		}
-	}
-
-	LocalFree(szArgList);
-
-	if (argList.size() == 0) {
-		return std::move(filename);
-	}
-	size_t ai = 0;
-	for (; ai < argList.size(); ++ai) {
-		std::wstring upperApp = FullPath(argList[ai]);
+		std::wstring upperApp = FullPath(arg);
 		for (size_t i = 0; i < upperApp.size(); ++i) {
 			upperApp[i] = towupper(upperApp[i]);
 		}
@@ -378,12 +376,17 @@ std::wstring GetFilenameParameter(wstring const& arguments) {
 				idx = std::wstring::npos;
 			}
 		}
-		if (idx == std::wstring::npos) {
+
+		if (idx == std::wstring::npos ) {
 			break;
 		}
+		skippedCount += sz;
 	}
-	if (ai < argList.size()) {
-		filename = FullPath(argList[ai]);
+
+	LocalFree(szArgList);
+
+	if (skippedCount < arguments.size()) {
+		filename = StripFilename(FullPath(arguments.substr(skippedCount)));
 	} else {
 		return std::move(filename);
 	}
