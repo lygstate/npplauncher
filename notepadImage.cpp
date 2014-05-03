@@ -47,6 +47,9 @@
 #include <Shlwapi.h>
 #pragma comment(lib, "shlwapi.lib")
 
+#include <psapi.h>
+#pragma comment(lib, "psapi.lib")
+
 #define CAPTION_POST TEXT(" ")
 #define CAPTION_PRE TEXT("NL ")
 #define CAPTION CAPTION_PRE NPPL_VERSION CAPTION_POST // must be 9 chars long to fit to current copyName()
@@ -233,23 +236,36 @@ wstring FullPath(wstring const &inPath) {
 	return _wfullpath(p.data(), inPath.c_str(), p.size());
 }
 
-wstring GetThisExecutable()
-{
+wstring GetModuleExecutable(HANDLE process, HMODULE module) {
 	std::vector<wchar_t> p;
 	p.resize(8192);
 	while (true) {
-		DWORD sz = GetModuleFileNameW(NULL, p.data(), p.size() - 1);
-		p.data()[sz] = 0;
-		if (p.size() <= sz) {
-			p.resize(sz + 1);
-		} else if (GetLastError() != ERROR_SUCCESS){
-			p.resize(p.size() << 1);
-		} else {
-			break;
+		DWORD sz;
+		if (process == NULL) {
+			sz = GetModuleFileNameW(module, p.data(), p.size() - 1);
 		}
+		else {
+			sz = GetModuleFileNameExW(process, module, p.data(), p.size() - 1);
+		}
+		p.resize(sz + 1);
+		p.data()[sz] = 0;
+		if (GetLastError() == ERROR_INSUFFICIENT_BUFFER || p.size() <= sz){
+			p.resize(p.size() << 1);
+			continue;
+		}
+		break;
+	}
+	if (p.size() == 1) {
+		return L"";
 	}
 	return std::move(FullPath(p.data()));
 }
+
+wstring GetThisExecutable()
+{
+	return GetModuleExecutable(NULL, NULL);
+}
+
 
 wstring GetParentDir(std::wstring p) {
 	wchar_t *ptr = (wchar_t*)p.c_str();
@@ -359,6 +375,7 @@ std::wstring GetFilenameParameter(wstring const& arguments) {
 				idx += notepad.size();
 				if (idx == upperApp.size())
 					break;
+				idx = std::wstring::npos;
 			}
 		}
 		if (idx == std::wstring::npos) {
@@ -429,6 +446,59 @@ bool LaunchProcess(STARTUPINFO& si, PROCESS_INFORMATION& oProcessInfo, std::wstr
 	return true;
 }
 
+
+DWORD FoundProcessPid(std::wstring const & processExecutable)
+{
+	std::vector<DWORD> processList;
+	processList.resize(16);
+	DWORD dw = 0;
+	while (true) {
+		DWORD pBytesReturned;
+		if (EnumProcesses(processList.data(), processList.size() * sizeof(DWORD), &pBytesReturned) == FALSE) {
+			return 0;
+		}
+		DWORD count = pBytesReturned / sizeof(DWORD);
+		if (count < processList.size()) {
+			processList.resize(count);
+			break;
+		}
+		processList.resize(processList.size() << 1);
+	}
+	for (size_t i = 0; i < processList.size() && dw == 0; ++i) {
+		HANDLE hProcess = OpenProcess(
+			PROCESS_QUERY_INFORMATION | PROCESS_VM_READ,
+			FALSE,
+			processList[i]);
+		HMODULE hMod;
+		DWORD cbNeeded;
+		if (hProcess == NULL) {
+			continue;
+		}
+		if (EnumProcessModules(
+			hProcess,
+			&hMod,
+			sizeof(hMod),
+			&cbNeeded))
+		{
+			std::wstring currentFilepath = GetModuleExecutable(hProcess, hMod);
+			if (currentFilepath == processExecutable) {
+				dw = processList[i];
+			}
+		}
+		CloseHandle(hProcess);
+	}
+	return dw;
+}
+
+
+BOOL IsProcessRunning(DWORD pid)
+{
+	HANDLE process = OpenProcess(SYNCHRONIZE, FALSE, pid);
+	DWORD ret = WaitForSingleObject(process, 0);
+	CloseHandle(process);
+	return ret == WAIT_TIMEOUT;
+}
+
 // main 
 int WINAPI wWinMain(
 	HINSTANCE hThisInstance,
@@ -437,16 +507,18 @@ int WINAPI wWinMain(
 	int nShowCmd
 	)
 {
+	std::wstring commandline;
 	std::wstring cmd;
 	bool bWaitForNotepadClose = true;
 
 	MyRegisterClass(hThisInstance);
 
-	if (!ReadOptions(cmd, bWaitForNotepadClose, bDebug))
+	if (!ReadOptions(commandline, bWaitForNotepadClose, bDebug))
 	{
 		return -1; // error case
 	}
 
+	cmd = commandline;
 	if (!CreateCommandLine(cmd, filename, bDebug, lpCmdLine))
 	{
 		return -1; // error case
@@ -468,9 +540,7 @@ int WINAPI wWinMain(
 		std::wstring ballonMsg = std::wstring(CAPTION) + L":" + filename;
 		_TrayIcon.ShowBalloon(TEXT("Double click this icon when editing is finished..."), ballonMsg.c_str(), 1);
 	}
-	if (bDebug) {
-		MessageBoxW(NULL, cmd.c_str(), L"notepadImage initial command line", MB_OK);
-	}
+	//MessageBoxW(NULL, cmd.c_str(), L"notepadImage initial command line", MB_OK);
 	STARTUPINFO si;
 	PROCESS_INFORMATION oProcessInfo;
 	if (!LaunchProcess(si, oProcessInfo, cmd, false)) {
@@ -481,14 +551,16 @@ int WINAPI wWinMain(
 			<< dw << L": " << errorMsg << L"\nPlease consider checking the configurations in notepadImage.ini";
 		MessageBoxW(NULL, msg.str().c_str(), TEXT("notepadImage Error"), MB_OK);
 	} else if (bWaitForNotepadClose) {
-		// FIXME: Wait until child process notify to exit.
-
+		DWORD pid = FoundProcessPid(commandline);
 		// message loop for tray icon:
 		MSG msg;
 		while (GetMessage(&msg, NULL, 0, 0))
 		{
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
+			if (!IsProcessRunning(pid)) {
+				break;
+			}
 		}
 		CloseHandle(oProcessInfo.hProcess);
 		CloseHandle(oProcessInfo.hThread);

@@ -596,17 +596,6 @@ BOOL CSystemTray::ShowBalloon(LPCTSTR szText,
 
     // Verify input parameters.
 
-    // The balloon tooltip text can be up to 255 chars long.
-//    ASSERT(AfxIsValidString(szText));
-    ASSERT(lstrlen(szText) < 256);
-
-    // The balloon title text can be up to 63 chars long.
-    if (szTitle)
-    {
-//        ASSERT(AfxIsValidString( szTitle));
-        ASSERT(lstrlen(szTitle) < 64);
-    }
-
     // dwBalloonIcon must be valid.
     ASSERT(NIIF_NONE == dwIcon    || NIIF_INFO == dwIcon ||
            NIIF_WARNING == dwIcon || NIIF_ERROR == dwIcon);
