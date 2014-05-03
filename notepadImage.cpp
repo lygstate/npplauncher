@@ -300,59 +300,77 @@ bool ReadOptions(std::wstring& notepadCmd, bool& bWaitForNotepadClose, /*DWORD& 
 	return true;
 }
 
-// create from lpszArgument a valid arguments list for program to be called 
-// this is especially to remove the notepad.exe name from the line
-// cmd: the final running cmd
-// filename: the file that notepad will open
-bool CreateCommandLine(std::wstring& cmd, std::wstring& filename, boolean const& bDebug, wstring const& arguments)
-{
+std::wstring GetFilenameParameter(wstring const& arguments) {
 	// different calling conventions
 	static wstring const notepadNames[] = {
-		L"NOTEPAD.EXE\"",
-		L"NOTEPAD.EXE",
-		L"NOTEPAD\"",
-		L"NOTEPAD",
+		L"\\NOTEPADIMAGE.EXE",
+		L"\\NOTEPADIMAGE",
+		L"\\NOTEPAD.EXE",
+		L"\\NOTEPAD",
 	};
 
-	if (bDebug) {
-		if (IDCANCEL == MessageBoxW(NULL, arguments.c_str(), L"notepadImage initial command line", MB_OKCANCEL))
-			return false;
+	std::wstring filename = L"";
+	int argCount;
+	std::vector<wstring> argList;
+
+	LPWSTR *szArgList = CommandLineToArgvW(arguments.c_str(), &argCount);
+	if (szArgList == NULL) {
+		return std::move(filename);
+	}
+	for (int i = 0; i < argCount; ++i) {
+		std::wstring arg = szArgList[i];
+		if (arg.size() == 0) {
+			continue;
+		}
+		size_t pos = 0;
+		size_t end = arg.size() - 1;
+		while (pos <= end) {
+			if (iswspace(arg[pos]) || arg[pos] == L'\"') {
+				++pos;
+				continue;
+			}
+			if (iswspace(arg[end]) || arg[end] == L'\"') {
+				--end;
+				continue;
+			}
+			break;
+		}
+		if (pos <= end) {
+			argList.push_back(arg.substr(pos, end + 1));
+		}
 	}
 
-	std::wstring upperApp = L"";
-	for (size_t i = 0; i < arguments.size(); ++i) {
-		upperApp += towupper(arguments[i]);
+	LocalFree(szArgList);
+
+	if (argList.size() == 0) {
+		return std::move(filename);
 	}
-	std::wstring notepad = L"";
-	size_t idx = std::wstring::npos;
-	for (int i = 0; i < length_of(notepadNames); ++i) {
-		idx = upperApp.find(notepadNames[i]);
-		if (idx != std::wstring::npos) {
-			notepad = notepadNames[i];
+	size_t ai = 0;
+	for (; ai < argList.size(); ++ai) {
+		std::wstring upperApp = FullPath(argList[ai]);
+		for (size_t i = 0; i < upperApp.size(); ++i) {
+			upperApp[i] = towupper(upperApp[i]);
+		}
+		size_t idx = std::wstring::npos;
+		for (int i = 0; i < length_of(notepadNames); ++i) {
+			idx = upperApp.find(notepadNames[i]);
+			if (idx != std::wstring::npos) {
+				std::wstring notepad = notepadNames[i];
+				idx += notepad.size();
+				if (idx == upperApp.size())
+					break;
+			}
+		}
+		if (idx == std::wstring::npos) {
 			break;
 		}
 	}
-	if (idx != std::wstring::npos) {
-		idx += notepad.size();
+	if (ai < argList.size()) {
+		filename = FullPath(argList[ai]);
 	} else {
-		idx = 0;
-	}
-	while (idx < arguments.size() && iswspace(arguments[idx])) ++idx;
-
-	if (idx < arguments.size() && arguments[idx] == L'\"') ++idx;
-
-	size_t end = arguments.size();
-	if (idx < arguments.size() && *arguments.rbegin() == L'\"') end = arguments.size() - 1;
-
-	if (idx >= end) {
-		if (bDebug) {
-			MessageBoxW(NULL, arguments.c_str(), L"notepadImage initial command line failed, can not found notepad command", MB_OK);
-		}
-		filename = L"";
-		goto filenameFound;
+		return std::move(filename);
 	}
 
-	filename = FullPath(arguments.substr(idx, end));
 	if (*filename.rbegin() == '\\') filename.resize(filename.size() - 1);
 
 	struct _stat st;
@@ -366,11 +384,24 @@ bool CreateCommandLine(std::wstring& cmd, std::wstring& filename, boolean const&
 		filename += L"\\.txt";
 	}
 
+	return std::move(filename);
+}
+
+// create from lpszArgument a valid arguments list for program to be called 
+// this is especially to remove the notepad.exe name from the line
+// cmd: the final running cmd
+// filename: the file that notepad will open
+bool CreateCommandLine(std::wstring& cmd, std::wstring& filename, boolean const& bDebug, wstring const& arguments)
+{
+	std::wstring upperApp;
+
 	if (bDebug) {
-		if (IDCANCEL == MessageBox(NULL, filename.c_str(), TEXT("notepadImage expanded parameters"), MB_OKCANCEL))
-			return 0;
+		if (IDCANCEL == MessageBoxW(NULL, arguments.c_str(), L"notepadImage initial command line", MB_OKCANCEL))
+			return false;
 	}
-filenameFound:
+
+	filename = GetFilenameParameter(arguments);
+
 	if (filename.size() > 0) {
 		cmd = cmd + L" \"" + filename + L"\"";
 	}
