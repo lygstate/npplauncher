@@ -27,6 +27,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <wctype.h>
+#include <sstream>
 
 #ifndef _WIN32_IE
 #define _WIN32_IE 0x0501
@@ -49,9 +50,6 @@
 #define WM_ICON_NOTIFY WM_APP+10
 #define MAX_TOOLTIP_LEN 64
 #define MAX_TITLE_LEN 100
-
-#define MSG_TEXT_PRC_ERR TEXT("CreateProcess() failed with error %d: %s \n\
-Please consider checking the registry at HKLM/Software/NppLauncher/.")
 
 static CSystemTray _TrayIcon;
 bool bDebug = 0;
@@ -179,11 +177,10 @@ BOOL InitInstance(HINSTANCE hInstance, std::wstring arg/*, int nCmdShow*/)
 	return TRUE;
 }
 
-std::wstring QueryErrorString() {
+std::wstring QueryErrorString(DWORD dw) {
 	// Retrieve the system error message for the last-error code
 
 	LPWSTR lpMsgBuf = 0;
-	DWORD dw = GetLastError();
 	FormatMessageW(
 		FORMAT_MESSAGE_ALLOCATE_BUFFER |
 		FORMAT_MESSAGE_FROM_SYSTEM |
@@ -238,7 +235,7 @@ std::wstring QueryNotepadCommand() {
 		RegCloseKey(hKey);
 	} else {
 		if (bDebug) {
-			std::wstring msg = L"Open registry caused error" + QueryErrorString();
+			std::wstring msg = L"Open registry caused error" + QueryErrorString(GetLastError());
 			MessageBoxW(NULL, msg.c_str(), L"Error opening registry", MB_OK);
 		}
 	}
@@ -340,17 +337,12 @@ bool LaunchNotepad(STARTUPINFO& si, PROCESS_INFORMATION& oProcessInfo, std::wstr
 	// launch the Notepad++
 	std::vector<wchar_t> cmdStr(cmd.c_str(), cmd.c_str() + cmd.size() + 1);
 	if (CreateProcessW(NULL, cmdStr.data(), NULL, NULL, false, 0, NULL, NULL, &si, &oProcessInfo) == FALSE) {
-		LPTSTR lpMsgBuf = 0;
-		LPTSTR lpDisplayBuf;
 		DWORD dw = GetLastError();
-
-		::FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM,
-			NULL, dw, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&lpMsgBuf, 0, NULL);
-		lpDisplayBuf = new TCHAR[lstrlen(lpMsgBuf) + 20 + lstrlen(MSG_TEXT_PRC_ERR)]; // 20 for err number
-		lsprintf(lpDisplayBuf, MSG_TEXT_PRC_ERR, dw, lpMsgBuf);
-		::MessageBox(NULL, lpDisplayBuf, TEXT("NppLauncher Error"), MB_OK);
-		LocalFree(lpMsgBuf);
-		delete[] lpDisplayBuf;
+		std::wstring errorMsg = QueryErrorString(dw);
+		std::wstringstream msg;
+		msg << L"CreateProcess() failed with error "
+			<< dw << L": " << errorMsg << L"\nPlease consider checking the configurations in notepadImage.ini";
+		MessageBoxW(NULL, msg.str().c_str(), TEXT("NppLauncher Error"), MB_OK);
 		return false;
 	}
 	return true;
