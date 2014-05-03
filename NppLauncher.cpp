@@ -41,7 +41,7 @@
 #include <assert.h>
 #include "nppl_defines.h"
 #define MDBG_COMP "Nppl:"
-#include "mydebug.h"
+#include "NotepadDebug.h"
 
 #define CAPTION_POST TEXT(" ")
 #define CAPTION_PRE TEXT("NL ")

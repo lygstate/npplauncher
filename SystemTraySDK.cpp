@@ -36,7 +36,7 @@
 
 #include "SystemTraySDK.h"
 #define MDBG_COMP "Stry:"
-#include "mydebug.h"
+#include "NotepadDebug.h"
 
 #ifdef _DEBUG
 #undef THIS_FILE
