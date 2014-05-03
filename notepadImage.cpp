@@ -70,6 +70,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	case WM_COPYDATA:
 		if (lParam){
 			COPYDATASTRUCT * pcds = (COPYDATASTRUCT *)lParam;
+			if (pcds->dwData == NPPL_ID_PROG_CLOSED) {
+				LPCWSTR lpszString = (LPCWSTR)(pcds->lpData);
+				DBGW1("WndProc: got message NPPL_ID_PROG_CLOSED: %s", lpszString);
+				PostQuitMessage(0);
+			}
 			if (pcds->dwData == NPPL_ID_FILE_CLOSED) {
 				LPCWSTR lpszString = (LPCWSTR)(pcds->lpData);
 				DBGW1("WndProc: got message NPPL_ID_FILE_CLOSED: %s", lpszString);
@@ -336,14 +341,15 @@ bool CreateCommandLine(std::wstring& cmd, std::wstring& filename, boolean const&
 
 	if (idx < arguments.size() && arguments[idx] == L'\"') ++idx;
 
-	size_t end = std::wstring::npos;
+	size_t end = arguments.size();
 	if (idx < arguments.size() && *arguments.rbegin() == L'\"') end = arguments.size() - 1;
 
 	if (idx >= end) {
 		if (bDebug) {
 			MessageBoxW(NULL, arguments.c_str(), L"notepadImage initial command line failed, can not found notepad command", MB_OK);
 		}
-		return true;
+		filename = L"";
+		goto filenameFound;
 	}
 
 	filename = FullPath(arguments.substr(idx, end));
@@ -364,6 +370,7 @@ bool CreateCommandLine(std::wstring& cmd, std::wstring& filename, boolean const&
 		if (IDCANCEL == MessageBox(NULL, filename.c_str(), TEXT("notepadImage expanded parameters"), MB_OKCANCEL))
 			return 0;
 	}
+filenameFound:
 	if (filename.size() > 0) {
 		cmd = cmd + L" \"" + filename + L"\"";
 	}
