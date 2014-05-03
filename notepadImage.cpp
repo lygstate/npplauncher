@@ -468,7 +468,9 @@ int WINAPI wWinMain(
 		std::wstring ballonMsg = std::wstring(CAPTION) + L":" + filename;
 		_TrayIcon.ShowBalloon(TEXT("Double click this icon when editing is finished..."), ballonMsg.c_str(), 1);
 	}
-
+	if (bDebug) {
+		MessageBoxW(NULL, cmd.c_str(), L"notepadImage initial command line", MB_OK);
+	}
 	STARTUPINFO si;
 	PROCESS_INFORMATION oProcessInfo;
 	if (!LaunchProcess(si, oProcessInfo, cmd, false)) {
