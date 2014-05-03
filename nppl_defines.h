@@ -31,7 +31,7 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
 #define NPPL_PLGN_TITLE TEXT("notepadImage Plugin ")
 #define NPPL_PLGN_HELP TEXT("\n\
-Copyright: Yonggang Luo, Mattes H.\n\
+Copyright: Yonggang Luo\n\
 This plugin is the hook for notepadImage observing if an edit window\n\
 becomes closed. If you close a window in NoptePad++ this plugin\n\
 will send a release message to notepadImage systemtray App to release \n\
@@ -41,7 +41,7 @@ For further information see http://sourceforge.net/projects/notepadImage/")
 #define NPPL_PLGN_HELP_TEXT NPPL_PLGN_TITLE NPPL_VERSION_INFO NPPL_PLGN_HELP
 
 #define NPPL_PRG_HELP TEXT("\n\
-Copyright: Mattes H.\n\
+Copyright: Yonggang Luo\n\
 This program replaces the notepad.exe by a different editor like Notepad++\n\
 It creates a blocking application in the systemtray and sends a request\n\
 to open the text file in NotePad++.\n\

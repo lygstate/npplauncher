@@ -9,7 +9,7 @@
 
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
-IDI_NPP_0               ICON                    "notepadImage.ico"
+IDI_NOTEPAD_IMAGE_ICON               ICON                    "notepadImage.ico"
 
 #ifdef APSTUDIO_INVOKED
 /////////////////////////////////////////////////////////////////////////////

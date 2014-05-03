@@ -44,6 +44,9 @@
 #define MDBG_COMP "Nppl:"
 #include "NotepadDebug.h"
 
+#include <Shlwapi.h>
+#pragma comment(lib, "shlwapi.lib")
+
 #define CAPTION_POST TEXT(" ")
 #define CAPTION_PRE TEXT("NL ")
 #define CAPTION CAPTION_PRE NPPL_VERSION CAPTION_POST // must be 9 chars long to fit to current copyName()
@@ -135,12 +138,12 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
 	wcex.cbClsExtra = 0;
 	wcex.cbWndExtra = 0;
 	wcex.hInstance = hInstance;
-	wcex.hIcon = ::LoadIcon(hInstance, (LPCTSTR)IDI_NPP_0);
+	wcex.hIcon = ::LoadIcon(hInstance, (LPCTSTR)IDI_NOTEPAD_IMAGE_ICON);
 	wcex.hCursor = ::LoadCursor(NULL, IDC_ARROW);
 	wcex.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
 	wcex.lpszMenuName = MAKEINTRESOURCE(IDR_CNTXT_MENU);  // TODO: check if this is correct
 	wcex.lpszClassName = szTitle;
-	wcex.hIconSm = ::LoadIcon(wcex.hInstance, (LPCTSTR)IDI_NPP_0);
+	wcex.hIconSm = ::LoadIcon(wcex.hInstance, (LPCTSTR)IDI_NOTEPAD_IMAGE_ICON);
 
 	return ::RegisterClassEx(&wcex);
 }
@@ -165,7 +168,7 @@ BOOL InitInstance(HINSTANCE hInstance, std::wstring arg/*, int nCmdShow*/)
 		hWnd,                            // Parent window
 		WM_ICON_NOTIFY,                  // Icon notify message to use
 		arg.c_str(),                     // tooltip
-		::LoadIcon(hInstance, (LPCTSTR)IDI_NPP_0),
+		::LoadIcon(hInstance, (LPCTSTR)IDI_NOTEPAD_IMAGE_ICON),
 		IDR_CNTXT_MENU))
 	{
 		// Create the icon failed.
@@ -197,15 +200,14 @@ std::wstring QueryErrorString(DWORD dw) {
 
 bool QueryRegistryString(HKEY hKey, std::wstring key, std::wstring &value) {
 	DWORD iType = REG_NONE;
-	value.reserve(8192);
-	DWORD iDataSize = value.capacity() * sizeof(wchar_t);
-	LSTATUS errorCode = ::RegQueryValueExW(hKey, L"Debugger", NULL, &iType, (LPBYTE)value.data(), &iDataSize);
+	DWORD iDataSize = 0;
+	LSTATUS errorCode = ::RegQueryValueExW(hKey, L"Debugger", NULL, &iType, NULL, &iDataSize);
 	if (iType != REG_SZ)
 	{
 		value.resize(0);
 		return false;
 	}
-	if (errorCode == ERROR_MORE_DATA) {
+	if (errorCode == ERROR_SUCCESS && iDataSize > 0) {
 		if (iDataSize & 1) ++iDataSize;
 		DWORD sz = iDataSize >> 1;
 		value.reserve(sz + 1);
@@ -220,6 +222,38 @@ bool QueryRegistryString(HKEY hKey, std::wstring key, std::wstring &value) {
 	return true;
 }
 
+wstring FullPath(wstring const &inPath) {
+	std::vector<wchar_t> p;
+	p.resize(8192);
+	return _wfullpath(p.data(), inPath.c_str(), p.size());
+}
+
+wstring GetThisExecutable()
+{
+	std::vector<wchar_t> p;
+	p.resize(8192);
+	while (true) {
+		DWORD sz = GetModuleFileNameW(NULL, p.data(), p.size() - 1);
+		p.data()[sz] = 0;
+		if (p.size() <= sz) {
+			p.resize(sz + 1);
+		} else if (GetLastError() != ERROR_SUCCESS){
+			p.resize(p.size() << 1);
+		} else {
+			break;
+		}
+	}
+	return std::move(FullPath(p.data()));
+}
+
+wstring GetParentDir(std::wstring p) {
+	wchar_t *ptr = (wchar_t*)p.c_str();
+	PathRemoveFileSpecW(ptr);
+	return ptr;
+}
+
+bool LaunchProcess(STARTUPINFO& si, PROCESS_INFORMATION& oProcessInfo, std::wstring cmd, bool wait);
+
 std::wstring QueryNotepadCommand() {
 	HKEY hKey;
 	LSTATUS errorCode = RegOpenKeyExW(
@@ -228,18 +262,27 @@ std::wstring QueryNotepadCommand() {
 		0,
 		KEY_READ,
 		&hKey);
+	std::wstring parentDir = L"";
 	if (errorCode == ERROR_SUCCESS)
 	{
 		std::wstring notepadImage;
 		QueryRegistryString(hKey, L"Debugger", notepadImage);
+		notepadImage = FullPath(notepadImage);
+		std::wstring notepadImageCurrent = GetThisExecutable();
 		RegCloseKey(hKey);
+		parentDir = GetParentDir(notepadImageCurrent) + L"\\";
+		if (notepadImage != notepadImageCurrent) {
+			STARTUPINFO si;
+			PROCESS_INFORMATION oProcessInfo;
+			LaunchProcess(si, oProcessInfo, parentDir + L"notepadImageInstall.bat", true);
+		}
 	} else {
 		if (bDebug) {
 			std::wstring msg = L"Open registry caused error" + QueryErrorString(GetLastError());
 			MessageBoxW(NULL, msg.c_str(), L"Error opening registry", MB_OK);
 		}
 	}
-	return L"notepad++.exe";
+	return parentDir + L"notepad++.exe";
 }
 
 // read the parameters from registry how to behave
@@ -300,12 +343,7 @@ bool CreateCommandLine(std::wstring& cmd, std::wstring& filename, boolean const&
 		return true;
 	}
 
-	std::wstring tmpPath = arguments.substr(idx, end);
-	std::vector<wchar_t> p;
-	p.resize(_MAX_PATH + 1);
-	wchar_t *fPath = _wfullpath(p.data(), tmpPath.c_str(), p.size());
-	filename = fPath;
-
+	filename = FullPath(arguments.substr(idx, end));
 	if (*filename.rbegin() == '\\') filename.resize(filename.size() - 1);
 
 	struct _stat st;
@@ -329,7 +367,7 @@ bool CreateCommandLine(std::wstring& cmd, std::wstring& filename, boolean const&
 	return true;
 }
 
-bool LaunchNotepad(STARTUPINFO& si, PROCESS_INFORMATION& oProcessInfo, std::wstring cmd) {
+bool LaunchProcess(STARTUPINFO& si, PROCESS_INFORMATION& oProcessInfo, std::wstring cmd, bool wait) {
 	// preparation the notepad++ process launch information.
 	memset(&si, 0, sizeof(si));
 	si.cb = sizeof(si);
@@ -337,13 +375,15 @@ bool LaunchNotepad(STARTUPINFO& si, PROCESS_INFORMATION& oProcessInfo, std::wstr
 	// launch the Notepad++
 	std::vector<wchar_t> cmdStr(cmd.c_str(), cmd.c_str() + cmd.size() + 1);
 	if (CreateProcessW(NULL, cmdStr.data(), NULL, NULL, false, 0, NULL, NULL, &si, &oProcessInfo) == FALSE) {
-		DWORD dw = GetLastError();
-		std::wstring errorMsg = QueryErrorString(dw);
-		std::wstringstream msg;
-		msg << L"CreateProcess() failed with error "
-			<< dw << L": " << errorMsg << L"\nPlease consider checking the configurations in notepadImage.ini";
-		MessageBoxW(NULL, msg.str().c_str(), TEXT("notepadImage Error"), MB_OK);
+		CloseHandle(oProcessInfo.hProcess);
+		CloseHandle(oProcessInfo.hThread);
 		return false;
+	}
+	if (wait) {
+		// Wait until child process exits.
+		WaitForSingleObject(oProcessInfo.hProcess, INFINITE);
+		CloseHandle(oProcessInfo.hProcess);
+		CloseHandle(oProcessInfo.hThread);
 	}
 	return true;
 }
@@ -381,14 +421,24 @@ int WINAPI wWinMain(
 		return -1; // error case
 	}
 
-	STARTUPINFO si;
-	PROCESS_INFORMATION oProcessInfo;
-	if (LaunchNotepad(si, oProcessInfo, cmd) && bWaitForNotepadClose)
-	{
+	if (bWaitForNotepadClose) {
 		// Wait until child process to exit.
 
 		std::wstring ballonMsg = std::wstring(CAPTION) + L":" + filename;
 		_TrayIcon.ShowBalloon(TEXT("Double click this icon when editing is finished..."), ballonMsg.c_str(), 1);
+	}
+
+	STARTUPINFO si;
+	PROCESS_INFORMATION oProcessInfo;
+	if (!LaunchProcess(si, oProcessInfo, cmd, false)) {
+		DWORD dw = GetLastError();
+		std::wstring errorMsg = QueryErrorString(dw);
+		std::wstringstream msg;
+		msg << L"CreateProcess() failed with error "
+			<< dw << L": " << errorMsg << L"\nPlease consider checking the configurations in notepadImage.ini";
+		MessageBoxW(NULL, msg.str().c_str(), TEXT("notepadImage Error"), MB_OK);
+	} else if (bWaitForNotepadClose) {
+		// FIXME: Wait until child process notify to exit.
 
 		// message loop for tray icon:
 		MSG msg;
@@ -397,10 +447,8 @@ int WINAPI wWinMain(
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
 		}
+		CloseHandle(oProcessInfo.hProcess);
+		CloseHandle(oProcessInfo.hThread);
 	}
-
-	// on program exit.
-	CloseHandle(oProcessInfo.hProcess);
-	CloseHandle(oProcessInfo.hThread);
 	return 0;
 }

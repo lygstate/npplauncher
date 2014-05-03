@@ -2,7 +2,7 @@
 // Microsoft Visual C++ generated include file.
 // Used by notepad_private.rc
 //
-#define IDI_NPP_0                       102
+#define IDI_NOTEPAD_IMAGE_ICON                       102
 #define IDR_MENU1                       103
 #define IDR_CNTXT_MENU                  103
 #define IDM_ABOUT                       104
